@@ -2,8 +2,8 @@ name: Epic Games Free Games Monitor
 
 on:
   schedule:
-    # Runs every Thursday at 3 PM UTC (Epic releases games on Thursday)
-    - cron: '0 16 * * 4'
+    # Runs every Friday at 3 PM UTC
+    - cron: '0 15 * * 5'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
