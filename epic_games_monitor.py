@@ -7,10 +7,7 @@ Monitors Epic Games free weekly games and sends email notifications
 import os
 import json
 import requests
-import smtplib
-from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 from typing import List, Dict
 
 # Configuration
@@ -88,69 +85,65 @@ def get_new_games(all_games: List[Dict], notified: set) -> List[Dict]:
 
 
 def send_email(recipient_email: str, games: List[Dict]):
-    """Send email with game information"""
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    sender_email = os.getenv("GMAIL_ADDRESS")
-    sender_password = os.getenv("GMAIL_PASSWORD")  # App password, not actual password
-    
-    if not sender_email or not sender_password:
-        print("Error: GMAIL_ADDRESS and GMAIL_PASSWORD environment variables not set")
+    """Send email with game information via Mailgun"""
+    api_key = os.getenv("MAILGUN_API_KEY")
+    domain = os.getenv("MAILGUN_DOMAIN")
+    from_address = os.getenv("MAILGUN_FROM", f"Epic Games Monitor <mailgun@{domain}>")
+
+    if not api_key or not domain:
+        print("Error: MAILGUN_API_KEY and MAILGUN_DOMAIN environment variables not set")
         return False
-    
-    try:
-        # Create email
-        msg = MIMEMultipart("html")
-        msg["Subject"] = f"🎮 Epic Games Free Games - {datetime.now().strftime('%B %d, %Y')}"
-        msg["From"] = sender_email
-        msg["To"] = recipient_email
-        
-        # Build HTML content
-        html_content = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px;">
-                        🎮 Epic Games Free Games This Week
-                    </h2>
-                    <p style="color: #666;">Hello! Here are the new free games available on Epic Games:</p>
-        """
-        
-        for game in games:
-            html_content += f"""
-                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 15px 0; background: #f9fafb;">
-                        <h3 style="margin-top: 0; color: #1f2937;">{game['title']}</h3>
-                        <p style="color: #666;">{game['description'][:200]}...</p>
-                        <p style="font-size: 0.9em; color: #999;">
-                            <strong>Free Until:</strong> {game['promotion_end']}
-                        </p>
-                        <a href="{game['url']}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
-                            Claim Game on Epic Games
-                        </a>
-                    </div>
-            """
-        
-        html_content += """
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+
+    # Build HTML content
+    html_content = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px;">
+                    Epic Games Free Games This Week
+                </h2>
+                <p style="color: #666;">Hello! Here are the new free games available on Epic Games:</p>
+    """
+
+    for game in games:
+        html_content += f"""
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 15px 0; background: #f9fafb;">
+                    <h3 style="margin-top: 0; color: #1f2937;">{game['title']}</h3>
+                    <p style="color: #666;">{game['description'][:200]}...</p>
                     <p style="font-size: 0.9em; color: #999;">
-                        This is an automated email from your Epic Games Free Games Monitor.
+                        <strong>Free Until:</strong> {game['promotion_end']}
                     </p>
+                    <a href="{game['url']}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
+                        Claim Game on Epic Games
+                    </a>
                 </div>
-            </body>
-        </html>
         """
-        
-        msg.attach(MIMEText(html_content, "html"))
-        
-        # Send email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-        
+
+    html_content += """
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                <p style="font-size: 0.9em; color: #999;">
+                    This is an automated email from your Epic Games Free Games Monitor.
+                </p>
+            </div>
+        </body>
+    </html>
+    """
+
+    try:
+        response = requests.post(
+            f"https://api.mailgun.net/v3/{domain}/messages",
+            auth=("api", api_key),
+            data={
+                "from": from_address,
+                "to": recipient_email,
+                "subject": f"Epic Games Free Games - {datetime.now().strftime('%B %d, %Y')}",
+                "html": html_content,
+            },
+        )
+        response.raise_for_status()
         print(f"✓ Email sent successfully to {recipient_email}")
         return True
-    
+
     except Exception as e:
         print(f"✗ Error sending email: {e}")
         return False
@@ -158,7 +151,7 @@ def send_email(recipient_email: str, games: List[Dict]):
 
 def main():
     """Main function"""
-    recipient_email = os.getenv("RECIPIENT_EMAIL", os.getenv("GMAIL_ADDRESS"))
+    recipient_email = os.getenv("RECIPIENT_EMAIL")
     
     if not recipient_email:
         print("Error: RECIPIENT_EMAIL environment variable not set")

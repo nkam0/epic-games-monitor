@@ -1,16 +1,19 @@
 # Epic Games Free Games Monitor - Setup Guide
 
-This script monitors Epic Games' free weekly games and sends you an email every Thursday if new games are available.
+This script monitors Epic Games' free weekly games and sends you an email every Thursday if new games are available. It uses [Mailgun](https://www.mailgun.com) to deliver emails via their HTTP API.
 
 ## Quick Setup
 
-### Step 1: Create Gmail App Password
+### Step 1: Create a Mailgun Account
 
-1. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-   - You must have 2-Factor Authentication enabled first
-2. Select **Mail** and **Windows Computer** (or your device)
-3. Generate the app password (Google will show a 16-character password)
-4. **Copy this password** - you'll need it soon
+1. Sign up at [mailgun.com](https://www.mailgun.com) (free tier allows 1,000 emails/month)
+2. In the Mailgun dashboard, go to **Sending** → **Domains**
+3. Add and verify a sending domain (e.g. `mg.yourdomain.com`), or use the sandbox domain for testing
+4. Go to **API Keys** (under your account settings) and copy your **Private API key**
+
+You will need:
+- **API Key**: starts with `key-...`
+- **Sending Domain**: e.g. `mg.yourdomain.com`
 
 ### Step 2: Create a GitHub Repository
 
@@ -40,10 +43,16 @@ git push -u origin main
 
 1. Go to your GitHub repository
 2. Click **Settings** → **Secrets and variables** → **Actions**
-3. Add these three secrets:
-   - `GMAIL_ADDRESS`: Your Gmail address (e.g., yourname@gmail.com)
-   - `GMAIL_PASSWORD`: The 16-character app password from Step 1
-   - `RECIPIENT_EMAIL`: Email to receive notifications (can be same as GMAIL_ADDRESS)
+3. Add these secrets:
+
+| Secret | Description | Example |
+|---|---|---|
+| `MAILGUN_API_KEY` | Your Mailgun private API key | `key-abc123...` |
+| `MAILGUN_DOMAIN` | Your Mailgun sending domain | `mg.yourdomain.com` |
+| `MAILGUN_FROM` | Sender address shown in emails | `Epic Games Monitor <noreply@mg.yourdomain.com>` |
+| `RECIPIENT_EMAIL` | Email address to receive notifications | `you@example.com` |
+
+> `MAILGUN_FROM` is optional — if omitted, it defaults to `mailgun@{your-domain}`.
 
 ### Step 5: Enable Workflows
 
@@ -54,7 +63,7 @@ git push -u origin main
 
 - **Runs**: Every Thursday at 3 PM UTC (when Epic releases new games)
 - **Sends Email**: Only if there are new games you haven't been notified about
-- **Remembers**: Keeps track of games you've been notified about in `games_notified.json`
+- **Remembers**: Keeps track of notified games in `games_notified.json`, auto-committed back to the repo
 
 ## Manual Testing
 
@@ -64,45 +73,46 @@ To test without waiting for Thursday:
 2. Click on **Epic Games Free Games Monitor**
 3. Click **Run workflow** → **Run workflow** (green button)
 
+## Run Locally
+
+```bash
+python -m pip install -r requirements.txt
+export MAILGUN_API_KEY="key-your-api-key"
+export MAILGUN_DOMAIN="mg.yourdomain.com"
+export MAILGUN_FROM="Epic Games Monitor <noreply@mg.yourdomain.com>"
+export RECIPIENT_EMAIL="you@example.com"
+python epic_games_monitor.py
+```
+
 ## Troubleshooting
 
 ### Email Not Sending?
-- Check you used an **[app password](https://myaccount.google.com/apppasswords)**, not your regular Gmail password
-- Verify 2FA is enabled on your Google account
-- Check GitHub Action logs for error messages
+- Confirm `MAILGUN_API_KEY` is the **Private** API key, not the Public Validation key
+- Make sure the sending domain is fully verified in Mailgun (DNS records propagated)
+- If using the Mailgun sandbox domain, the recipient address must be added as an **Authorized Recipient** in the Mailgun dashboard
+- Check the GitHub Actions log for the full error response from the API
 
 ### Script Not Running?
 - Check the **Actions** tab for failed workflow runs
 - Click on a failed run to see error details
-- Verify all three secrets are set correctly
+- Verify all four secrets are set correctly
 
 ### Changes Not Saving?
-- The script auto-commits the `games_notified.json` file
-- Check GitHub repository settings have **Allow GitHub Actions to create and approve pull requests** enabled (if needed)
+- The script auto-commits `games_notified.json` after a successful send
+- Check that GitHub Actions has write permission: **Settings** → **Actions** → **General** → **Workflow permissions** → set to **Read and write**
 
 ## Customization
 
 ### Change Run Time
-Edit `.github/workflows/epic-games-monitor.yml` line 8:
+Edit `.github/workflows/epic-games-monitor.yml`:
 ```yaml
-- cron: '0 15 * * 4'  # Hour Minute Day Month DayOfWeek (4 = Thursday)
+- cron: '0 15 * * 4'  # Every Thursday at 3 PM UTC
 ```
 Use [crontab.guru](https://crontab.guru) to calculate your preferred time.
 
-### Run Locally (without GitHub Actions)
-```bash
-python -m pip install -r requirements.txt
-export GMAIL_ADDRESS="your-email@gmail.com"
-export GMAIL_PASSWORD="your-app-password"
-export RECIPIENT_EMAIL="recipient@gmail.com"
-python epic_games_monitor.py
-```
-
 ## Notes
 
-- Emails are sent in nice HTML format
-- First run will notify about current free games
+- Emails are sent in HTML format
+- First run will notify about all currently free games
 - Subsequent runs only email about newly added games
-- GitHub provides 35,000+ minutes/month of free Actions (more than enough for once-weekly runs)
-
-Enjoy getting free games! 🎮
+- GitHub provides 2,000+ free Actions minutes/month — more than enough for once-weekly runs

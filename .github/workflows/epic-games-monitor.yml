@@ -29,8 +29,9 @@ jobs:
       
       - name: Run Epic Games Monitor
         env:
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+          MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+          MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
+          MAILGUN_FROM: ${{ secrets.MAILGUN_FROM }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         run: python epic_games_monitor.py
