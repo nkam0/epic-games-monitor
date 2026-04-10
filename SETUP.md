@@ -1,6 +1,6 @@
 # Epic Games Free Games Monitor - Setup Guide
 
-This script monitors Epic Games' free weekly games and sends you an email every Thursday if new games are available. It uses [Mailgun](https://www.mailgun.com) to deliver emails via their HTTP API.
+This script monitors Epic Games' free weekly games and sends you an email every Friday if new games are available. It uses [Mailgun](https://www.mailgun.com) to deliver emails via their HTTP API.
 
 ## Quick Setup
 
@@ -61,13 +61,13 @@ git push -u origin main
 
 ## How It Works
 
-- **Runs**: Every Thursday at 3 PM UTC (when Epic releases new games)
+- **Runs**: Every Friday at 3 PM UTC (when Epic releases new games)
 - **Sends Email**: Only if there are new games you haven't been notified about
 - **Remembers**: Keeps track of notified games in `games_notified.json`, auto-committed back to the repo
 
 ## Manual Testing
 
-To test without waiting for Thursday:
+To test without waiting for Friday:
 
 1. Go to the **Actions** tab
 2. Click on **Epic Games Free Games Monitor**
@@ -106,7 +106,7 @@ python epic_games_monitor.py
 ### Change Run Time
 Edit `.github/workflows/epic-games-monitor.yml`:
 ```yaml
-- cron: '0 15 * * 4'  # Every Thursday at 3 PM UTC
+- cron: '0 15 * * 5'  # Every Friday at 3 PM UTC
 ```
 Use [crontab.guru](https://crontab.guru) to calculate your preferred time.
 

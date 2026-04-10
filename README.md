@@ -1,10 +1,10 @@
 # Epic Games Free Games Monitor
 
-Automatically monitor Epic Games' free weekly games and get email notifications every Thursday.
+Automatically monitor Epic Games' free weekly games and get email notifications every Friday.
 
 ## Features
 
-- **Automatic Monitoring**: Runs every Thursday at 3 PM UTC
+- **Automatic Monitoring**: Runs every Friday at 3 PM UTC
 - **Email Alerts**: Receives beautifully formatted HTML emails with game details
 - **Smart Tracking**: Only sends emails about new games (remembers what you've been notified of)
 - **Free Cloud Hosting**: Runs on GitHub Actions (completely free)
@@ -21,7 +21,7 @@ See [SETUP.md](SETUP.md) for detailed instructions.
 
 ## How to Use
 
-- **Automatic**: Runs every Thursday at 3 PM UTC
+- **Automatic**: Runs every Friday at 3 PM UTC
 - **Manual Test**: Go to Actions → Run workflow
 - **Local Testing**: `python epic_games_monitor.py` (with environment variables set)
 
